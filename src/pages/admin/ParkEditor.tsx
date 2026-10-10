@@ -259,7 +259,7 @@ export default function ParkEditor() {
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-white/80 flex items-center gap-1.5">
                 Bog' ID (Slug/Unique Key)
-                <HelpCircle className="w-4 h-4 text-white/30" title="Linklarda ishlatiladigan unikal nom, masalan: botanika" />
+                <span title="Linklarda ishlatiladigan unikal nom, masalan: botanika"><HelpCircle className="w-4 h-4 text-white/30" /></span>
               </label>
               <Input
                 disabled={isEditMode}

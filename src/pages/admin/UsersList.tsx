@@ -22,19 +22,25 @@ interface UserProfileData {
 export default function UsersList() {
   const [users, setUsers] = useState<UserProfileData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const q = query(collection(db, "users"), orderBy("lastLogin", "desc"));
-        const snapshot = await getDocs(q);
+        // Sorting is done client-side so users without a lastLogin field are not dropped.
+        const snapshot = await getDocs(collection(db, "users"));
         const usersData: UserProfileData[] = [];
         snapshot.forEach((doc) => {
           usersData.push({ id: doc.id, ...doc.data() } as UserProfileData);
         });
+        const toMillis = (ts: any) => (ts?.toMillis ? ts.toMillis() : ts ? new Date(ts).getTime() : 0);
+        usersData.sort((a, b) => toMillis(b.lastLogin) - toMillis(a.lastLogin));
         setUsers(usersData);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching users list:", error);
+        setErrorMsg(error?.code === "permission-denied"
+          ? "Firestore ruxsat bermadi (permission-denied). Firebase Console → Firestore → Rules bo'limini tekshiring."
+          : `Foydalanuvchilarni yuklashda xatolik: ${error?.message || error}`);
       } finally {
         setLoading(false);
       }
@@ -73,7 +79,13 @@ export default function UsersList() {
       </div>
 
       {/* Grid List */}
-      {users.length === 0 ? (
+      {errorMsg && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm p-4">
+          {errorMsg}
+        </div>
+      )}
+
+      {!errorMsg && users.length === 0 ? (
         <Card className="glass border border-white/5 rounded-3xl p-12 text-center text-white/40">
           <Users className="w-16 h-16 text-white/20 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-white mb-1">Foydalanuvchilar yo'q</h3>

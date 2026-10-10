@@ -69,18 +69,6 @@ const TourViewer = () => {
   const [textureB, setTextureB] = useState<THREE.Texture | null>(null);
   const [activeBuffer, setActiveBuffer] = useState<"A" | "B">("A");
 
-  useEffect(() => {
-    return () => {
-      if (textureA) textureA.dispose();
-    };
-  }, [textureA]);
-
-  useEffect(() => {
-    return () => {
-      if (textureB) textureB.dispose();
-    };
-  }, [textureB]);
-  
   const [currentSceneId, setCurrentSceneId] = useState("1");
   const [opacityA, setOpacityA] = useState(1);
   const [opacityB, setOpacityB] = useState(0);
@@ -94,6 +82,14 @@ const TourViewer = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const textureLoader = useRef(new THREE.TextureLoader());
   const preloadedTextures = useRef<Record<string, THREE.Texture>>({});
+
+  // Cached textures are owned by preloadedTextures and disposed on unmount below.
+  useEffect(() => {
+    const cache = preloadedTextures.current;
+    return () => {
+      Object.values(cache).forEach((tex) => tex.dispose());
+    };
+  }, []);
 
   useEffect(() => {
     if (!authSessionLoading) {
@@ -116,29 +112,40 @@ const TourViewer = () => {
         setIsInitialLoading(true);
         setLoadingProgress(0);
         const parkDocRef = doc(db, "parks", parkId!);
-        const parkSnap = await getDoc(parkDocRef);
-        
-        if (parkSnap.exists()) {
-          const pData = parkSnap.data();
-          setParkData(pData);
+        let parkSnap: Awaited<ReturnType<typeof getDoc>> | null = null;
+        try {
+          parkSnap = await getDoc(parkDocRef);
+        } catch (dbErr) {
+          console.error("Firestore parks read failed, using built-in data:", dbErr);
+        }
+
+        const isBuiltInPark = ["botanika", "islamic-center", "ecopark"].includes(parkId!);
+
+        if (parkSnap?.exists() || isBuiltInPark) {
+          const pData: Record<string, any> = parkSnap?.exists() ? parkSnap.data() : {};
+          setParkData(parkSnap?.exists() ? pData : null);
           
           if (!user) {
             setIsInitialLoading(false);
             return;
           }
           
-          const scenesSnap = await getDocs(query(collection(db, "parks", parkId!, "scenes"), orderBy("order", "asc")));
           const loadedScenes: Record<string, any> = {};
           const scenesArray: any[] = [];
-          
-          scenesSnap.forEach((doc) => {
-            const data = doc.data();
-            scenesArray.push({
-              id: doc.id,
-              url: data.url,
-              order: data.order
+
+          try {
+            const scenesSnap = await getDocs(query(collection(db, "parks", parkId!, "scenes"), orderBy("order", "asc")));
+            scenesSnap.forEach((doc) => {
+              const data = doc.data();
+              scenesArray.push({
+                id: doc.id,
+                url: data.url,
+                order: data.order
+              });
             });
-          });
+          } catch (scenesErr) {
+            console.error("Firestore scenes read failed, using built-in scenes:", scenesErr);
+          }
 
           if (scenesArray.length === 0) {
             const mockCount = pData.totalScenes || 15;

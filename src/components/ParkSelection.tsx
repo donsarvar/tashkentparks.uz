@@ -150,7 +150,7 @@ const ParkSelection = () => {
 
                   {/* Content */}
                   <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8">
-                    {location.coords && (
+                    {location.lat !== undefined && location.lon !== undefined && (
                       <motion.div 
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -158,7 +158,7 @@ const ParkSelection = () => {
                       >
                         <MapPin className="w-3.5 h-3.5" />
                         <span>
-                          {t.distance} {getDistance(location.coords.latitude, location.coords.longitude, park.coords.lat, park.coords.lng).toFixed(1)} km {t.away}
+                          {t.distance} {getDistance(location.lat, location.lon, park.coords.lat, park.coords.lng).toFixed(1)} km {t.away}
                         </span>
                       </motion.div>
                     )}
