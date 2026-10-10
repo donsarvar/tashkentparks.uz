@@ -213,7 +213,7 @@ export default function ScenesManager() {
             <div className="flex-1 flex flex-col gap-2 w-full">
               <label className="text-xs font-semibold text-white/70 flex items-center gap-1">
                 Panorama rasm URL manzili
-                <HelpCircle className="w-3.5 h-3.5 text-white/30" title="Rasm fayli manzili. Masalan: /botanika/1.webp, internet linki yoki quyida fayl yuklang." />
+                <span title="Rasm fayli manzili. Masalan: /botanika/1.webp, internet linki yoki quyida fayl yuklang."><HelpCircle className="w-3.5 h-3.5 text-white/30" /></span>
               </label>
               <div className="flex gap-2">
                 <Input
